@@ -19,15 +19,8 @@ ActiveRecord::Schema.define(version: 2018_09_28_164823) do
     t.integer "row"
     t.integer "column"
     t.boolean "o_turn"
-    t.integer "game_id"
+	t.string "username"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
-
-  create_table "games", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  add_foreign_key "messages", "conversations"
 end

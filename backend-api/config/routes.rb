@@ -3,8 +3,8 @@ Rails.application.routes.draw do
 	# resources :conversations, only: [:index, :create]
 	# resources :messages, only: [:create]
 
-	resources :games, only: [:index,:create]
-	resources :blocks, only: [:create]
+	# resources :games, only: [:index,:create]
+	resources :blocks
 
 	mount ActionCable.server => '/cable'
 end

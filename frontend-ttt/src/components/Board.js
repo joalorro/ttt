@@ -23,15 +23,6 @@ class Board extends Component {
 	}
 
 	componentDidMount = () => {
-
-		fetch(`${API_ROOT}/games`)
-			.then(res => res.json())
-			.then(games => {
-				if (!this.state.game_id) {
-					const game = this.createGame()
-					this.setState({game})
-				}
-			})
 	
 		blockWebSocket = WSAdapter.openConnection()
 		blockWebSocket.onopen = e => {
@@ -43,21 +34,6 @@ class Board extends Component {
 		}
 		WSAdapter.liveSocket(blockWebSocket)
 	}
-	
-	createGame = () => {
-		fetch(`${API_ROOT}/games`, {
-			method:"POST",
-			headers: HEADERS,
-			body: JSON.stringify({})
-		})
-			.then(res => {
-				console.log(res.json())
-			})
-			.then(results => {
-				
-				console.log(results)
-			})
-	}
 
 	updateBoardOnClick = (letter,blockNum) => {
 		let row = Math.floor(blockNum / 3.1) 
@@ -67,21 +43,20 @@ class Board extends Component {
 			board[row][column] = letter
 			return {board}
 		}, () => {
-			
-			console.log(this.state.board)
+			// console.log(this.state.board)
 		})
+		this.createAndSendData({row,column})
+	}
 
-		const msg = {
-			"command": "message",
-			"identifier": "{\"channel\":\"BlocksChannel\"}",
-			"data": `{
-            \"action\": \"send_circle\",
-            \"row\": \"${row}\",
-            \"column\": \"${column}\",
-            \"game_id\": \"${this.state.game_id}\",
-            \"o_turn\": \"${this.state.OTurn}\",
-            }`
-		}
+	createAndSendData = ({row,column}) => {
+		const msg = WSAdapter.createBlockDataMsg({
+			row,
+			column,
+			username: this.props.username,
+			OTurn: this.state.OTurn
+		})
+		// debugger
+		WSAdapter.sendBlockDataMsg(blockWebSocket, msg)
 	}
 
 	renderTurn = (letter,blockNum) => {

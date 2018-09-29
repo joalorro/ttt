@@ -1,12 +1,21 @@
 import React, { Component } from 'react';
 import './App.css';
-import Board from './components/Board'
+import UsernameRoom from './components/UsernameRoom'
 
 class App extends Component {
+
+	state = {
+		username: ''
+	}
+
+	setUsername = (username) => {
+		this.setState({username})
+	}
+
 	render() {
 		return (
 		<div className="App">
-			<Board />
+			<UsernameRoom setUsername={this.setUsername} />
 		</div>
 		);
 	}
