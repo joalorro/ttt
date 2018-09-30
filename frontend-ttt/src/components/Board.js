@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { ActionCable } from 'react-actioncable-provider'
-import { API_ROOT, HEADERS } from '../constants'
-import Cable from './Cable'
+// import { API_ROOT, HEADERS } from '../constants'
+// import Cable from './Cable'
 import WSAdapter from '../functions/WSAdapter'
 
 
@@ -19,7 +19,9 @@ class Board extends Component {
 			["","",""]
 		],
 		OTurn: false,
-		game_id: 0
+		game_id: 0,
+		team1: [],
+		team2: []
 	}
 
 	componentDidMount = () => {
@@ -32,20 +34,30 @@ class Board extends Component {
 			}
 			blockWebSocket.send(JSON.stringify(subscribeBlocks))
 		}
-		WSAdapter.liveSocket(blockWebSocket)
+		WSAdapter.liveSocket(blockWebSocket,this)
 	}
 
 	updateBoardOnClick = (letter,blockNum) => {
 		let row = Math.floor(blockNum / 3.1) 
 		let column = (blockNum - 1) % 3
-		this.setState(prevState => {
-			const board = prevState.board
-			board[row][column] = letter
-			return {board}
-		}, () => {
-			// console.log(this.state.board)
-		})
+		let blockInfo = {
+			row,
+			column,
+			letter
+		}
+		this.addBlockToBoard(blockInfo)
 		this.createAndSendData({row,column})
+	}
+
+	addBlockToBoard = ({row,column,letter}) => {
+		this.setState(prevState => {
+			let board = prevState.board
+			board[row][column] = letter
+			return {
+				board,
+				OTurn: !prevState.OTurn
+			}
+		}, () => console.log(this.state))
 	}
 
 	createAndSendData = ({row,column}) => {
@@ -70,14 +82,19 @@ class Board extends Component {
 
 	renderBlocks = () => {
 		const blocks = []
+		let board = this.state.board
+
 		for (let i = 0 ; i < 9; i++) {
-			let block = <Block key={`${i + 1}`} renderTurn={this.renderTurn} OTurn={this.state.OTurn} />
+			
+			let row = Math.floor(i / 3.1)
+			let column = (i - 1) % 3
+			let letter = board[row][column]
+
+			let block = <Block key={`${i}`} renderTurn={this.renderTurn} OTurn={this.state.OTurn} letter={letter} />
 			blocks.push(block)
 		}
 		return blocks
 	}
-
-	//Functions related to WS's
 
 	handleReceivedBlock = response => {
 		const { block } = response 

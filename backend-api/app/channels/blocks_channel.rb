@@ -17,7 +17,12 @@ class BlocksChannel < ApplicationCable::Channel
 			username: data['username']
 		}
 		
-		Block.create(block_hash)
+		# Block.create(block_hash)
+		block = Block.new block_hash 
+		if !block.save 
+			byebug
+		end 
+
 		ActionCable.server.broadcast('blocks_channel', block_hash)
 	end 
 

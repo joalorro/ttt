@@ -19,7 +19,7 @@ class UsernameRoom extends Component {
 	renderBoard = () => <Board username={this.state.username} />
 	
 	handleChange = (username) => {
-		this.setState({username}, console.log(this.state))
+		this.setState({username})
 	}
 
 	render() {
