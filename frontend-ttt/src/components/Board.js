@@ -2,13 +2,15 @@ import React, { Component } from 'react';
 import { ActionCable } from 'react-actioncable-provider'
 // import { API_ROOT, HEADERS } from '../constants'
 // import Cable from './Cable'
-import WSAdapter from '../functions/WSAdapter'
+import BlockWSAdapter from '../adapters/BlockWSAdapter'
+import UserWSAdapter from '../adapters/UserWSAdapter'
 
 
 import '../stylesheets/Board.css'
 import Block from './Block'
 
 let blockWebSocket
+let userWebSocket
 
 class Board extends Component {
 
@@ -21,20 +23,41 @@ class Board extends Component {
 		OTurn: false,
 		game_id: 0,
 		team1: [],
-		team2: []
+		team2: [],
+		observers: [],
+		currentPlayer: {
+			username: this.props.username,
+			id: 0,
+			nought: true
+		}
+
 	}
 
 	componentDidMount = () => {
+		userWebSocket = UserWSAdapter.openConnection()
+		userWebSocket.onopen = () => {
+			const subscribeUser = {
+				"command": "subscribe",
+				"identifier": "{\"channel\":\"UsersChannel\"}"
+			}
+			userWebSocket.send(JSON.stringify(subscribeUser))
+			UserWSAdapter.liveSocket(userWebSocket, this)
+
+			let userMsg = UserWSAdapter.createUserDataMsg(this.props.username)
+			userWebSocket.send(JSON.stringify(userMsg))
+
+		}
+		
 	
-		blockWebSocket = WSAdapter.openConnection()
-		blockWebSocket.onopen = e => {
+		blockWebSocket = BlockWSAdapter.openConnection()
+		blockWebSocket.onopen = () => {
 			const subscribeBlocks = {
 				"command": "subscribe",
 				"identifier": "{\"channel\":\"BlocksChannel\"}"
 			}
 			blockWebSocket.send(JSON.stringify(subscribeBlocks))
 		}
-		WSAdapter.liveSocket(blockWebSocket,this)
+		BlockWSAdapter.liveSocket(blockWebSocket,this)
 	}
 
 	updateBoardOnClick = (letter,blockNum) => {
@@ -60,15 +83,31 @@ class Board extends Component {
 		}, () => console.log(this.state))
 	}
 
+	addUser = user => {
+		if (!this.state.team1.length) {
+			this.setState(prevState => {
+				return {team1: prevState.team1.concat(user)}
+			}, () => console.log(this.state))
+		} else if (!this.state.team2.length){
+			this.setState(prevState => {
+				return {team2: prevState.team2.concat(user)}
+			}, () => console.log(this.state))
+		} else {
+			this.setState(prevState => {
+				return {observers: prevState.observers.concat(user)}
+			}, () => console.log(this.state))
+		}
+	}
+
 	createAndSendData = ({row,column}) => {
-		const msg = WSAdapter.createBlockDataMsg({
+		const msg = BlockWSAdapter.createBlockDataMsg({
 			row,
 			column,
-			username: this.props.username,
+			user_id: this.state.currentPlayer.id,
 			OTurn: this.state.OTurn
 		})
 		// debugger
-		WSAdapter.sendBlockDataMsg(blockWebSocket, msg)
+		blockWebSocket.send(JSON.stringify(msg))
 	}
 
 	renderTurn = (letter,blockNum) => {
@@ -102,6 +141,10 @@ class Board extends Component {
 		console.log(block)
 	}
 
+	showState = () =>{
+		console.log(this.state)
+	}
+
 	render() {
 		return (
 			<div id="gameboard">
@@ -110,7 +153,8 @@ class Board extends Component {
 					onReceived={ this.hanleReceivedBlock }
 				/>
 					{this.renderBlocks()}
-			
+					{console.log(this.state)}
+					<button onClick={this.showState}>Show State </button>
 			</div>
 		);
 	}
